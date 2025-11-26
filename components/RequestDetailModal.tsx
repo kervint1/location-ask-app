@@ -32,13 +32,22 @@ export default function RequestDetailModal({
 }: RequestDetailModalProps) {
   const router = useRouter();
   const [isAccepting, setIsAccepting] = useState(false);
+  const [hasAccepted, setHasAccepted] = useState(false);
 
   const handleAccept = () => {
+    setHasAccepted(true);
+  };
+
+  const handleAnswerSubmit = () => {
     setIsAccepting(true);
     // Navigate to answer page
     setTimeout(() => {
       router.push(`/requests/${requestId}/answer`);
     }, 500);
+  };
+
+  const handleCancel = () => {
+    setHasAccepted(false);
   };
 
   const formatDate = (date: any) => {
@@ -138,24 +147,49 @@ export default function RequestDetailModal({
 
           {/* Footer */}
           <div className="bg-gray-50 px-6 py-4 flex gap-3 justify-end sticky bottom-0 border-t border-gray-200">
-            <button
-              onClick={onClose}
-              disabled={isAccepting}
-              className="px-6 py-2 rounded-lg font-semibold text-gray-800 hover:bg-gray-100 transition disabled:opacity-50"
-            >
-              キャンセル
-            </button>
-            <button
-              onClick={handleAccept}
-              disabled={isAccepting}
-              className={`px-6 py-2 rounded-lg font-semibold text-white transition ${
-                isAccepting
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700'
-              }`}
-            >
-              {isAccepting ? '読み込み中...' : '✓ この依頼に回答する'}
-            </button>
+            {!hasAccepted ? (
+              <>
+                <button
+                  onClick={onClose}
+                  disabled={isAccepting}
+                  className="px-6 py-2 rounded-lg font-semibold text-gray-800 hover:bg-gray-100 transition disabled:opacity-50"
+                >
+                  キャンセル
+                </button>
+                <button
+                  onClick={handleAccept}
+                  disabled={isAccepting}
+                  className={`px-6 py-2 rounded-lg font-semibold text-white transition ${
+                    isAccepting
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700'
+                  }`}
+                >
+                  {isAccepting ? '読み込み中...' : '✓ この依頼を受ける'}
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={handleCancel}
+                  disabled={isAccepting}
+                  className="px-6 py-2 rounded-lg font-semibold text-gray-800 hover:bg-gray-100 transition disabled:opacity-50"
+                >
+                  キャンセル
+                </button>
+                <button
+                  onClick={handleAnswerSubmit}
+                  disabled={isAccepting}
+                  className={`px-6 py-2 rounded-lg font-semibold text-white transition ${
+                    isAccepting
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700'
+                  }`}
+                >
+                  {isAccepting ? '読み込み中...' : '→ 回答画面へ'}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
