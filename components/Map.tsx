@@ -6,6 +6,7 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { getNearbyRequests, getRequest } from '@/lib/firestore';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Dynamic import to avoid SSR issues
 const RequestDetailModal = dynamic(() => import('./RequestDetailModal'), { ssr: false });
@@ -40,6 +41,7 @@ export default function Map({ initialCenter }: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const { location, error } = useGeolocation();
+  const { user } = useAuth();
   const [requests, setRequests] = useState<RequestData[]>([]);
   const [mapLoading, setMapLoading] = useState(true);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
@@ -76,7 +78,7 @@ export default function Map({ initialCenter }: MapProps) {
       // Add user location marker
       new mapboxgl.Marker({ color: '#3b82f6' })
         .setLngLat([location.longitude, location.latitude])
-        .setPopup(new mapboxgl.Popup().setText('あなたの現在地'))
+        .setPopup(new mapboxgl.Popup().setHTML('<div style="color: #000000;">あなたの現在地</div>'))
         .addTo(map.current);
 
       // Add navigation controls
@@ -116,18 +118,28 @@ export default function Map({ initialCenter }: MapProps) {
 
         // Add markers for each request
         nearby.forEach(request => {
+          // 自分の依頼かどうかを判定
+          const isOwnRequest = request.userId === user?.uid;
+          const markerColor = isOwnRequest ? '#3b82f6' : '#ef4444'; // 青 or 赤
+
           const el = document.createElement('div');
-          el.className = 'w-8 h-8 bg-red-500 rounded-full cursor-pointer flex items-center justify-center text-white text-xs font-bold hover:bg-red-600';
+          el.className = 'w-8 h-8 rounded-full cursor-pointer flex items-center justify-center text-white text-xs font-bold';
           el.textContent = '📍';
           el.style.backgroundImage = 'none';
-          el.style.background = '#ef4444';
+          el.style.background = markerColor;
+
+          // ホバー時の色も動的に設定
+          const hoverColor = isOwnRequest ? '#1e40af' : '#dc2626'; // 濃い青 or 濃い赤
+          el.style.cursor = 'pointer';
+          el.onmouseover = () => { el.style.background = hoverColor; };
+          el.onmouseout = () => { el.style.background = markerColor; };
 
           const marker = new mapboxgl.Marker(el)
             .setLngLat([request.location.longitude, request.location.latitude])
             .setPopup(
               new mapboxgl.Popup({ offset: 25 }).setHTML(`
                 <div class="p-3">
-                  <h3 class="font-bold text-sm mb-2">${request.title || '依頼'}</h3>
+                  <h3 class="font-bold text-sm mb-2 text-black">${request.title || '依頼'}</h3>
                   <p class="text-xs text-gray-600 mb-3">${(request.description || '').substring(0, 50)}...</p>
                   <button class="w-full bg-blue-600 text-white px-2 py-1 rounded text-xs font-semibold hover:bg-blue-700" id="detail-btn-${request.id}">
                     詳細を見る
